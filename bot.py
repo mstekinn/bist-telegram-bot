@@ -88,7 +88,7 @@ def bulten_gonder(message):
             )
             
             response = client.models.generate_content(
-                model='gemini-3-flash-preview', 
+                model='gemini-1.5-flash', 
                 contents=ozet_bilgi
             )
             
@@ -139,7 +139,7 @@ def tek_hisse_analiz_et(message):
         )
         
         response = client.models.generate_content(
-            model='gemini-3-flash-preview', 
+            model='gemini-1.5-flash', 
             contents=prompt
         )
         
