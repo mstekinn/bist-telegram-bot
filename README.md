@@ -34,6 +34,7 @@ Projeyi kendi ortamınızda çalıştırmak için aşağıdaki adımları izleye
 
 Bash
 git clone https://github.com/mstekinn/bist-telegram-bot.git
+
 cd bist-telegram-bot
 
 2. Gerekli Kütüphaneleri Yükleyin
