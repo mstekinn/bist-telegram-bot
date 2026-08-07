@@ -58,24 +58,27 @@ def bulten_gonder(message):
         return
     
     try:
-        bot.reply_to(message, "⏳ Bülten taranıyor... Çoklu işlem (Threading) devrede, saniyeler içinde hazır olacak!")
+        bot.reply_to(message, "⏳ BIST 100 Bülteni taranıyor... 100 hissenin teknik verileri ve haberleri inceleniyor, bu işlem 1-2 dakika sürebilir, lütfen bekleyin!")
         
+        # BIST 100 HİSSELERİ (Güncel ve hacimli hisseler)
         bist100_hisseleri = [
-            'AEFES.IS', 'AGHOL.IS', 'AHGAZ.IS', 'AKBNK.IS', 'AKCNS.IS', 'AKFGY.IS', 'AKFYE.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS',
-            'ALBRK.IS', 'ALFAS.IS', 'ANSGR.IS', 'ARCLK.IS', 'ASELS.IS', 'ASTOR.IS', 'BERA.IS', 'BIENY.IS', 'BIMAS.IS', 'BOBET.IS',
-            'BRSAN.IS', 'BRYAT.IS', 'BUCIM.IS', 'CANTE.IS', 'CCOLA.IS', 'CIMSA.IS', 'CWENE.IS', 'DOAS.IS', 'DOHOL.IS', 'EBEBK.IS',
-            'ECILC.IS', 'ECZYT.IS', 'EGEEN.IS', 'EKGYO.IS', 'ENKAI.IS', 'ENJSA.IS', 'EREGL.IS', 'EUPWR.IS', 'FROTO.IS', 'GARAN.IS',
-            'GESAN.IS', 'GUBRF.IS', 'GWIND.IS', 'HALKB.IS', 'HEKTS.IS', 'IMASM.IS', 'INVES.IS', 'ISCTR.IS', 'ISGYO.IS', 'ISMEN.IS',
-            'KAYSE.IS', 'KCAER.IS', 'KCHOL.IS', 'KLSER.IS', 'KONTR.IS', 'KORDS.IS', 'KOZAL.IS', 'KOZAA.IS', 'KRDMD.IS', 'KTLEV.IS',
-            'LMKDC.IS', 'MAALT.IS', 'MAVI.IS', 'MHRGY.IS', 'MIATK.IS', 'MTRKS.IS', 'OTKAR.IS', 'OYYAT.IS', 'PETKM.IS', 'PGSUS.IS',
-            'QUAGR.IS', 'REEDR.IS', 'SAHOL.IS', 'SASA.IS', 'SDTTR.IS', 'SISE.IS', 'SKBNK.IS', 'SMRTG.IS', 'SOKM.IS', 'TABGD.IS',
-            'TAVHL.IS', 'TCELL.IS', 'THYAO.IS', 'TKFEN.IS', 'TOASO.IS', 'TSKB.IS', 'TTKOM.IS', 'TTRAK.IS', 'TUPRS.IS', 'TURSG.IS',
-            'ULKER.IS', 'VAKBN.IS', 'VESBE.IS', 'VESTL.IS', 'YEOTK.IS', 'YKBNK.IS', 'YYLGD.IS', 'ZOREN.IS'
+            'AEFES.IS', 'AGHOL.IS', 'AHGAZ.IS', 'AKBNK.IS', 'AKCNS.IS', 'AKFYE.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS', 'ALBRK.IS', 
+            'ALFAS.IS', 'ARCLK.IS', 'ASELS.IS', 'ASTOR.IS', 'ASUZU.IS', 'AYDEM.IS', 'BAGFS.IS', 'BERA.IS', 'BIENY.IS', 'BIMAS.IS', 
+            'BIOEN.IS', 'BOBET.IS', 'BRSAN.IS', 'BRYAT.IS', 'BUCIM.IS', 'CANTE.IS', 'CCOLA.IS', 'CIMSA.IS', 'CWENE.IS', 'DOAS.IS', 
+            'DOHOL.IS', 'ECILC.IS', 'ECZYT.IS', 'EGEEN.IS', 'EKGYO.IS', 'ENJSA.IS', 'ENKAI.IS', 'EREGL.IS', 'EUPWR.IS', 'EUREN.IS', 
+            'FROTO.IS', 'GARAN.IS', 'GENIL.IS', 'GESAN.IS', 'GLYHO.IS', 'GUBRF.IS', 'GWIND.IS', 'HALKB.IS', 'HEKTS.IS', 'HLGYO.IS', 
+            'IMASM.IS', 'INVEO.IS', 'INVES.IS', 'IPEKE.IS', 'ISCTR.IS', 'ISDMR.IS', 'ISFIN.IS', 'ISGYO.IS', 'ISMEN.IS', 'IZENR.IS', 
+            'KALES.IS', 'KARSN.IS', 'KAYSE.IS', 'KCAER.IS', 'KCHOL.IS', 'KMPUR.IS', 'KONTR.IS', 'KONYA.IS', 'KOZAA.IS', 'KOZAL.IS', 
+            'KRDMD.IS', 'KZBGY.IS', 'MAVI.IS', 'MGROS.IS', 'MIATK.IS', 'ODAS.IS', 'OTKAR.IS', 'OYAKC.IS', 'PENTI.IS', 'PETKM.IS', 
+            'PGSUS.IS', 'PNLSN.IS', 'QUAGR.IS', 'SAHOL.IS', 'SASA.IS', 'SAYAS.IS', 'SISE.IS', 'SKBNK.IS', 'SMRTG.IS', 'SOKM.IS', 
+            'TAVHL.IS', 'TCELL.IS', 'THYAO.IS', 'TKFEN.IS', 'TOASO.IS', 'TSKB.IS', 'TTKOM.IS', 'TTRAK.IS', 'TUPRS.IS', 'VAKBN.IS', 
+            'VESBE.IS', 'VESTL.IS', 'YEOTK.IS', 'YKBNK.IS', 'YYLGD.IS', 'ZOREN.IS'
         ]
         
-        # PERFORMANS GÜNCELLEMESİ: 100 hisseyi aynı anda çekmek için ThreadPoolExecutor kullanıyoruz
         fiyat_ve_haber_bilgileri = ""
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        
+        # HIZLANDIRMA: max_workers 20 yapılarak 100 hissenin verisi çok daha hızlı çekiliyor
+        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
             sonuclar = list(executor.map(tek_hisse_verisi_cek, bist100_hisseleri))
             
         for sonuc in sonuclar:
@@ -89,14 +92,13 @@ def bulten_gonder(message):
                 "GÖREVİN:\n"
                 "1. Fiyat hareketlerini teknik olarak incele.\n"
                 "2. Haber başlıklarındaki olumlu veya olumsuz gelişmeleri değerlendir.\n"
-                "3. Yükseliş potansiyeli en yüksek 5 hisseyi (KARAR: AL) ve düşüş potansiyeli en yüksek 5 hisseyi (KARAR: SAT) belirle.\n"
-                "4. Sadece seçtiğin bu 10 hisse için KESİNLİKLE aşağıdaki formatı kullanarak alt alta listeleme yap. Başka hiçbir kelime veya yorum YAZMA:\n\n"
+                "3. Tüm bu hisseler arasından yükseliş potansiyeli EN YÜKSEK 10 hisseyi (KARAR: AL) belirle.\n"
+                "4. Sadece seçtiğin bu 10 hisse için KESİNLİKLE aşağıdaki formatı kullanarak alt alta listeleme yap. Başka hiçbir açıklama, yorum veya kelime YAZMA:\n\n"
                 "Hisse: [HİSSE KODU]\n"
-                "KARAR: [AL veya SAT]\n"
+                "Güncel Fiyat: [Gönderdiğim son günün fiyatı] TL\n"
+                "KARAR: AL\n"
                 "Destek 1: [Fiyat] TL\n"
-                "Destek 2: [Fiyat] TL\n"
                 "Direnç 1: [Fiyat] TL\n"
-                "Direnç 2: [Fiyat] TL\n"
                 "----------------------"
             )
             
@@ -105,13 +107,12 @@ def bulten_gonder(message):
                 contents=ozet_bilgi
             )
             
-            # YASAL UYARI EKLENTİSİ
-            yasal_uyari = "\n\n⚠️ *Yasal Uyarı:* Veriler Yahoo Finance üzerinden sağlanmaktadır ve BIST kuralları gereği 15 dk gecikmeli olabilir. Bu botun verdiği kararlar yapay zeka demosu olup, KESİNLİKLE yatırım tavsiyesi (YTD) değildir."
+            yasal_uyari = "\n\n⚠️ *Yasal Uyarı:* Veriler Yahoo Finance üzerinden sağlanmaktadır ve BIST kuralları gereği 15 dk gecikmeli olabilir. Analizler yapay zeka desteklidir, kesinlikle yatırım tavsiyesi (YTD) değildir."
             
-            bot.send_message(CHAT_ID, f"📊 **Teknik & Haber Destekli Hisse Analizi (Günün 10 Hissesi):**\n\n{response.text}{yasal_uyari}", parse_mode="Markdown")
+            bot.send_message(CHAT_ID, f"📊 **BIST 100 Yapay Zeka Günlük Önerileri (Top 10):**\n\n{response.text}{yasal_uyari}", parse_mode="Markdown")
             
         else:
-            bot.send_message(CHAT_ID, "Bülten için veri çekilemedi.")
+            bot.send_message(CHAT_ID, "Bülten için veri çekilemedi. Lütfen daha sonra tekrar deneyin.")
             
     except Exception as e:
         bot.send_message(CHAT_ID, f"Bülten hazırlanırken bir hata oluştu: {e}")
@@ -166,6 +167,7 @@ def tek_hisse_analiz_et(message):
             "Sen uzman bir borsa analistisin. Yukarıdaki matematiksel teknik indikatörleri "
             "(RSI aşırı alım/satım bölgelerini ve fiyatın ortalamaya göre konumunu) dikkate alarak "
             "bu hisse için KESİNLİKLE sadece aşağıdaki formatta, başka hiçbir açıklama veya yorum eklemeden cevap ver:\n\n"
+            "Güncel Fiyat: {son_kapanis:.2f} TL\n"
             "KARAR: [AL / SAT veya TUT]\n\n"
             "Destek 1: [Fiyat] TL\n"
             "Destek 2: [Fiyat] TL\n"
