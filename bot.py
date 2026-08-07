@@ -3,24 +3,59 @@ import yfinance as yf
 from google import genai
 import os
 import pandas_ta as ta
+import concurrent.futures # Hızlandırma (Threading) için EKLENDİ
 
 # --- 1. AYARLAR VE GİRİŞ BİLGİLERİ ---
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
+# GÜVENLİK GÜNCELLEMESİ: Sadece bu ID'lere sahip kişiler botu kullanabilir
+YETKILI_KULLANICILAR = [5512308462]
+
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 
-# --- 2. FONKSİYONLAR ---
+# --- HIZLANDIRMA İÇİN YARDIMCI FONKSİYON (YENİ) ---
+def tek_hisse_verisi_cek(hisse):
+    """Bülten taramasını hızlandırmak için her hisseyi ayrı iş parçacığında çeken fonksiyon."""
+    try:
+        ticker = yf.Ticker(hisse)
+        veri = ticker.history(period="5d")
+        
+        if veri.empty:
+            return ""
+            
+        kapanislar = veri['Close'].tolist()
+        hisse_adi = hisse.replace('.IS', '')
+        fiyatlar_str = " - ".join([f"{f:.2f}" for f in kapanislar])
+        
+        haberler = ticker.news
+        if haberler and len(haberler) > 0:
+            haber_basliklari = [haber.get('title', '') for haber in haberler[:2] if haber.get('title')]
+            haber_metni = " | ".join(haber_basliklari) if haber_basliklari else "Güncel haber yok."
+        else:
+            haber_metni = "Güncel haber yok."
+            
+        return f"{hisse_adi} | Trend: {fiyatlar_str} | Haberler: {haber_metni}\n"
+    except:
+        return ""
+
+
+# --- 2. ANA FONKSİYONLAR ---
 
 @bot.message_handler(commands=['bulten'])
 def bulten_gonder(message):
     CHAT_ID = message.chat.id
     
+    # YETKİ KONTROLÜ
+    if CHAT_ID not in YETKILI_KULLANICILAR:
+        bot.send_message(CHAT_ID, "⛔ Bu botu kullanma yetkiniz bulunmamaktadır.")
+        return
+    
     try:
-        bot.reply_to(message, "⏳ Bülten taranıyor ve yapay zeka analizi hazırlanıyor... Bu işlem birkaç dakika sürebilir, lütfen bekleyin.")
+        bot.reply_to(message, "⏳ Bülten taranıyor... Çoklu işlem (Threading) devrede, saniyeler içinde hazır olacak!")
         
         bist100_hisseleri = [
             'AEFES.IS', 'AGHOL.IS', 'AHGAZ.IS', 'AKBNK.IS', 'AKCNS.IS', 'AKFGY.IS', 'AKFYE.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS',
@@ -35,49 +70,23 @@ def bulten_gonder(message):
             'ULKER.IS', 'VAKBN.IS', 'VESBE.IS', 'VESTL.IS', 'YEOTK.IS', 'YKBNK.IS', 'YYLGD.IS', 'ZOREN.IS'
         ]
         
+        # PERFORMANS GÜNCELLEMESİ: 100 hisseyi aynı anda çekmek için ThreadPoolExecutor kullanıyoruz
         fiyat_ve_haber_bilgileri = ""
-        
-        # Tüm BIST 100 hisselerinin fiyat trendini ve haberlerini çek
-        for hisse in bist100_hisseleri:
-            try:
-                ticker = yf.Ticker(hisse)
-                
-                # 1. Adım: Son 5 günlük veriyi çek
-                veri = ticker.history(period="5d")
-                
-                if not veri.empty:
-                    kapanislar = veri['Close'].tolist()
-                    hisse_adi = hisse.replace('.IS', '')
-                    fiyatlar_str = " - ".join([f"{f:.2f}" for f in kapanislar])
-                    
-                    # 2. Adım: Hisseyle ilgili haberleri çek
-                    haberler = ticker.news
-                    haber_metni = ""
-                    
-                    if haberler and len(haberler) > 0:
-                        haber_basliklari = [haber.get('title', '') for haber in haberler[:2] if haber.get('title')]
-                        if haber_basliklari:
-                            haber_metni = " | ".join(haber_basliklari)
-                        else:
-                            haber_metni = "Güncel haber yok."
-                    else:
-                        haber_metni = "Güncel haber yok."
-                        
-                    # 3. Adım: Fiyat ve haberleri tek bir satırda birleştir
-                    fiyat_ve_haber_bilgileri += f"{hisse_adi} | Trend: {fiyatlar_str} | Haberler: {haber_metni}\n"
-            except:
-                continue 
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            sonuclar = list(executor.map(tek_hisse_verisi_cek, bist100_hisseleri))
+            
+        for sonuc in sonuclar:
+            fiyat_ve_haber_bilgileri += sonuc
         
         if fiyat_ve_haber_bilgileri != "":
-            # Gemini'ye kapsamlı talimatı veriyoruz
             ozet_bilgi = (
                 "Sen uzman bir borsa analistisin. Aşağıda BIST 100 endeksindeki hisselerin son 5 günlük kapanış fiyat trendleri "
                 "ve varsa en güncel haber başlıkları listelenmiştir:\n\n"
                 f"{fiyat_ve_haber_bilgileri}\n"
                 "GÖREVİN:\n"
                 "1. Fiyat hareketlerini teknik olarak incele.\n"
-                "2. Haber başlıklarındaki olumlu veya olumsuz gelişmeleri (temel analiz) değerlendir ve fiyat trendiyle birleştir.\n"
-                "3. Her iki kritere göre yükseliş potansiyeli en yüksek 5 hisseyi (KARAR: AL) ve düşüş potansiyeli en yüksek 5 hisseyi (KARAR: SAT) belirle.\n"
+                "2. Haber başlıklarındaki olumlu veya olumsuz gelişmeleri değerlendir.\n"
+                "3. Yükseliş potansiyeli en yüksek 5 hisseyi (KARAR: AL) ve düşüş potansiyeli en yüksek 5 hisseyi (KARAR: SAT) belirle.\n"
                 "4. Sadece seçtiğin bu 10 hisse için KESİNLİKLE aşağıdaki formatı kullanarak alt alta listeleme yap. Başka hiçbir kelime veya yorum YAZMA:\n\n"
                 "Hisse: [HİSSE KODU]\n"
                 "KARAR: [AL veya SAT]\n"
@@ -93,19 +102,27 @@ def bulten_gonder(message):
                 contents=ozet_bilgi
             )
             
-            analiz_metni = response.text
+            # YASAL UYARI EKLENTİSİ
+            yasal_uyari = "\n\n⚠️ *Yasal Uyarı:* Veriler Yahoo Finance üzerinden sağlanmaktadır ve BIST kuralları gereği 15 dk gecikmeli olabilir. Bu botun verdiği kararlar yapay zeka demosu olup, KESİNLİKLE yatırım tavsiyesi (YTD) değildir."
             
-            bot.send_message(CHAT_ID, f"📊 **Teknik & Haber Destekli Hisse Analizi (Günün 10 Hissesi):**\n\n{analiz_metni}", parse_mode="Markdown")
+            bot.send_message(CHAT_ID, f"📊 **Teknik & Haber Destekli Hisse Analizi (Günün 10 Hissesi):**\n\n{response.text}{yasal_uyari}", parse_mode="Markdown")
             
         else:
             bot.send_message(CHAT_ID, "Bülten için veri çekilemedi.")
             
     except Exception as e:
-        hata_mesaji = f"Bülten hazırlanırken bir hata oluştu: {e}"
-        bot.send_message(CHAT_ID, hata_mesaji)
+        bot.send_message(CHAT_ID, f"Bülten hazırlanırken bir hata oluştu: {e}")
+
 
 @bot.message_handler(commands=['analiz'])
 def tek_hisse_analiz_et(message):
+    CHAT_ID = message.chat.id
+    
+    # YETKİ KONTROLÜ
+    if CHAT_ID not in YETKILI_KULLANICILAR:
+        bot.send_message(CHAT_ID, "⛔ Bu botu kullanma yetkiniz bulunmamaktadır.")
+        return
+        
     try:
         komut_bolumleri = message.text.split()
         
@@ -120,23 +137,19 @@ def tek_hisse_analiz_et(message):
         bot.reply_to(message, f"{hisse_kodu} için teknik veriler ve indikatörler hesaplanıyor, lütfen bekleyin...")
         
         hisse = yf.Ticker(hisse_kodu)
-        # Hareketli ortalamanın (20 günlük) doğru hesaplanabilmesi için veriyi 3 aylık çekiyoruz.
         veri = hisse.history(period="3mo")
         
         if veri.empty:
             bot.reply_to(message, "Veri bulunamadı. Lütfen geçerli bir borsa kodu yazdığınızdan emin olun.")
             return
             
-        # --- İNDİKATÖR HESAPLAMALARI (pandas_ta) ---
-        veri.ta.rsi(length=14, append=True) # 14 Günlük RSI
-        veri.ta.sma(length=20, append=True) # 20 Günlük Basit Hareketli Ortalama (SMA)
+        veri.ta.rsi(length=14, append=True)
+        veri.ta.sma(length=20, append=True)
         
-        # Son günün verilerini al
         son_kapanis = veri['Close'].iloc[-1]
         son_rsi = veri['RSI_14'].iloc[-1]
         son_sma = veri['SMA_20'].iloc[-1]
         
-        # --- GEMINI'YE GİDECEK GELİŞMİŞ TALİMAT (PROMPT) ---
         prompt = (
             f"Hisse: {hisse_kodu}\n"
             f"Son Kapanış: {son_kapanis:.2f} TL\n"
@@ -157,7 +170,10 @@ def tek_hisse_analiz_et(message):
             contents=prompt
         )
         
-        bot.reply_to(message, response.text)
+        # YASAL UYARI EKLENTİSİ
+        yasal_uyari = "\n\n⚠️ *Yasal Uyarı:* Veriler 15 dk gecikmeli olabilir. Bu analiz yatırım tavsiyesi (YTD) değildir."
+        
+        bot.reply_to(message, f"{response.text}{yasal_uyari}")
         
     except Exception as e:
         bot.reply_to(message, f"Analiz sırasında bir hata oluştu: {e}")
