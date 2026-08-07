@@ -97,8 +97,8 @@ def bulten_gonder(message):
                 "Hisse: [HİSSE KODU]\n"
                 "Güncel Fiyat: [Gönderdiğim son günün fiyatı] TL\n"
                 "KARAR: AL\n"
-                "Destek 1: [Fiyat] TL\n"
-                "Direnç 1: [Fiyat] TL\n"
+                "Destek: [Fiyat] TL\n"
+                "Direnç: [Fiyat] TL\n"
                 "----------------------"
             )
             
