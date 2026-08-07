@@ -33,7 +33,7 @@ Projeyi kendi ortamınızda çalıştırmak için aşağıdaki adımları izleye
 1. Repoyu Klonlayın
 
 Bash
-git clone https://github.com/KULLANICI_ADIN/repo-adi.git
+git clone https://github.com/mstekinn/bist-telegram-bot.git
 cd repo-adi
 2. Gerekli Kütüphaneleri Yükleyin
 
