@@ -137,7 +137,7 @@ def tek_hisse_analiz_et(message):
         bot.reply_to(message, f"{hisse_kodu} için teknik veriler ve indikatörler hesaplanıyor, lütfen bekleyin...")
         
         hisse = yf.Ticker(hisse_kodu)
-        veri = hisse.history(period="3mo")
+       veri = hisse.history(period="3mo")
         
         if veri.empty:
             bot.reply_to(message, "Veri bulunamadı. Lütfen geçerli bir borsa kodu yazdığınızdan emin olun.")
@@ -146,6 +146,11 @@ def tek_hisse_analiz_et(message):
         veri.ta.rsi(length=14, append=True)
         veri.ta.sma(length=20, append=True)
         
+        # HATA ÖNLEYİCİ GÜVENLİK KONTROLÜ (YENİ EKLENEN KISIM)
+        if 'RSI_14' not in veri.columns or 'SMA_20' not in veri.columns:
+            bot.reply_to(message, "⚠️ Bu hisse için yeterli geçmiş veri bulunamadı. (Hisse yeni halka arz olmuş veya yeterli işlem gününe ulaşmamış olabilir).")
+            return
+            
         son_kapanis = veri['Close'].iloc[-1]
         son_rsi = veri['RSI_14'].iloc[-1]
         son_sma = veri['SMA_20'].iloc[-1]
