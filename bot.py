@@ -20,7 +20,7 @@ bot = telebot.TeleBot(TELEGRAM_TOKEN)
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 
-# --- HIZLANDIRMA İÇİN YARDIMCI FONKSİYON (YENİ) ---
+# --- HIZLANDIRMA İÇİN YARDIMCI FONKSİYON ---
 def tek_hisse_verisi_cek(hisse):
     """Bülten taramasını hızlandırmak için her hisseyi ayrı iş parçacığında çeken fonksiyon."""
     try:
