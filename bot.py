@@ -1,7 +1,8 @@
 import telebot
 import yfinance as yf
 from google import genai
-import os # Çevre değişkenleri için eklendi
+import os
+import pandas_ta as ta
 
 # --- 1. AYARLAR VE GİRİŞ BİLGİLERİ ---
 
@@ -19,7 +20,7 @@ def bulten_gonder(message):
     CHAT_ID = message.chat.id
     
     try:
-        bot.reply_to(message, "⏳ Bültenter taranıyor ve yapay zeka analizi hazırlanıyor... Bu işlem birkaç dakika sürebilir, lütfen bekleyin.")
+        bot.reply_to(message, "⏳ Bülten taranıyor ve yapay zeka analizi hazırlanıyor... Bu işlem birkaç dakika sürebilir, lütfen bekleyin.")
         
         bist100_hisseleri = [
             'AEFES.IS', 'AGHOL.IS', 'AHGAZ.IS', 'AKBNK.IS', 'AKCNS.IS', 'AKFGY.IS', 'AKFYE.IS', 'AKSA.IS', 'AKSEN.IS', 'ALARK.IS',
@@ -116,21 +117,34 @@ def tek_hisse_analiz_et(message):
         if not hisse_kodu.endswith(".IS"):
             hisse_kodu += ".IS"
             
-        bot.reply_to(message, f"{hisse_kodu} için veriler çekiliyor, lütfen bekleyin...")
+        bot.reply_to(message, f"{hisse_kodu} için teknik veriler ve indikatörler hesaplanıyor, lütfen bekleyin...")
         
         hisse = yf.Ticker(hisse_kodu)
-        veri = hisse.history(period="1mo")
+        # Hareketli ortalamanın (20 günlük) doğru hesaplanabilmesi için veriyi 3 aylık çekiyoruz.
+        veri = hisse.history(period="3mo")
         
         if veri.empty:
             bot.reply_to(message, "Veri bulunamadı. Lütfen geçerli bir borsa kodu yazdığınızdan emin olun.")
             return
             
-        son_kapanis = veri['Close'].iloc[-1]
+        # --- İNDİKATÖR HESAPLAMALARI (pandas_ta) ---
+        veri.ta.rsi(length=14, append=True) # 14 Günlük RSI
+        veri.ta.sma(length=20, append=True) # 20 Günlük Basit Hareketli Ortalama (SMA)
         
+        # Son günün verilerini al
+        son_kapanis = veri['Close'].iloc[-1]
+        son_rsi = veri['RSI_14'].iloc[-1]
+        son_sma = veri['SMA_20'].iloc[-1]
+        
+        # --- GEMINI'YE GİDECEK GELİŞMİŞ TALİMAT (PROMPT) ---
         prompt = (
             f"Hisse: {hisse_kodu}\n"
             f"Son Kapanış: {son_kapanis:.2f} TL\n"
-            "Sen bir borsa uzmanısın. Lütfen bu hisse için KESİNLİKLE sadece aşağıdaki formatta, başka hiçbir açıklama veya yorum eklemeden cevap ver:\n\n"
+            f"14 Günlük RSI: {son_rsi:.2f}\n"
+            f"20 Günlük Hareketli Ortalama (SMA): {son_sma:.2f} TL\n\n"
+            "Sen uzman bir borsa analistisin. Yukarıdaki matematiksel teknik indikatörleri "
+            "(RSI aşırı alım/satım bölgelerini ve fiyatın ortalamaya göre konumunu) dikkate alarak "
+            "bu hisse için KESİNLİKLE sadece aşağıdaki formatta, başka hiçbir açıklama veya yorum eklemeden cevap ver:\n\n"
             "KARAR: [AL / SAT veya TUT]\n\n"
             "Destek 1: [Fiyat] TL\n"
             "Destek 2: [Fiyat] TL\n"
