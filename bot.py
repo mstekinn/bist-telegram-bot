@@ -10,8 +10,11 @@ import concurrent.futures # Hızlandırma (Threading) için EKLENDİ
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# GÜVENLİK GÜNCELLEMESİ: Sadece bu ID'lere sahip kişiler botu kullanabilir
-YETKILI_KULLANICILAR = [5512308462]
+# Çevresel değişkenden ID'yi al ve tam sayıya (integer) çevir
+ADMIN_ID = int(os.environ.get("ADMIN_ID", 0))
+
+# GÜVENLİK: Sadece bu ID'lere sahip kişiler botu kullanabilir
+YETKILI_KULLANICILAR = [ADMIN_ID]
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 client = genai.Client(api_key=GEMINI_API_KEY)
