@@ -137,7 +137,7 @@ def tek_hisse_analiz_et(message):
         bot.reply_to(message, f"{hisse_kodu} için teknik veriler ve indikatörler hesaplanıyor, lütfen bekleyin...")
         
         hisse = yf.Ticker(hisse_kodu)
-       veri = hisse.history(period="3mo")
+        veri = hisse.history(period="3mo")
         
         if veri.empty:
             bot.reply_to(message, "Veri bulunamadı. Lütfen geçerli bir borsa kodu yazdığınızdan emin olun.")
